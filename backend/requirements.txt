@@ -1,0 +1,12 @@
+# Lower bounds only — let pip pick wheels that match the local Python (3.14 here).
+fastapi>=0.115
+uvicorn[standard]>=0.34
+pydantic>=2.10
+pydantic-settings>=2.7
+sqlmodel>=0.0.22
+python-dotenv>=1.0
+httpx>=0.28
+
+# Phase 4 — pin exact version when wiring the LLM (see docs/SPEC.md §11).
+# The Anthropic SDK is on 1.x; `claude-api` skill has current model ids + params.
+anthropic
