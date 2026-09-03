@@ -49,3 +49,74 @@ class RevenueEvent(SQLModel, table=True):
     status: str
     true_cause: str  # HIDDEN ground truth — never serialized to the wire
     meta: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+
+
+# --- Pipeline output tables (Phase 2) -------------------------------------------------
+# One row per event per run. run_batch() clears these and rewrites them each run.
+
+
+class Diagnosis(SQLModel, table=True):
+    __tablename__ = "diagnosis"
+
+    event_id: str = Field(primary_key=True)
+    cause: str
+    confidence: float
+    evidence: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+    narrative: str = ""  # LLM-written in Phase 4
+
+
+class Plan(SQLModel, table=True):
+    __tablename__ = "plan"
+
+    event_id: str = Field(primary_key=True)
+    action: str
+    channel: str
+    rationale: str = ""  # LLM-written in Phase 4
+    blocked_by: str | None = None  # ComplianceRuleId if compliance blocked/deferred it
+
+
+class Execution(SQLModel, table=True):
+    __tablename__ = "execution"
+
+    event_id: str = Field(primary_key=True)
+    action: str
+    channel: str
+    attempted_at: str
+    outcome: str
+    amount_recovered: int = 0
+    outreach_cost: int = 0
+
+
+class ReviewItem(SQLModel, table=True):
+    __tablename__ = "review_item"
+
+    event_id: str = Field(primary_key=True)
+    action: str
+    rationale: str = ""
+    status: str = "pending"  # pending | approved | rejected
+    decided_by: str | None = None
+    decided_at: str | None = None
+
+
+class AuditEntry(SQLModel, table=True):
+    __tablename__ = "audit_entry"
+
+    id: str = Field(primary_key=True)  # aud_000001
+    ts: str
+    event_id: str = Field(index=True)
+    stage: str
+    actor: str
+    detail: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+
+
+class BatchRun(SQLModel, table=True):
+    __tablename__ = "batch_run"
+
+    id: int | None = Field(default=None, primary_key=True)
+    seed: int
+    mode: str
+    baseline: bool
+    ran_at: str
+    event_count: int
+    aggregates: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+    leak_graph: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))

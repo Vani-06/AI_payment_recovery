@@ -46,6 +46,13 @@ CHANNEL_COST: dict[Channel, int] = {
     Channel.finance_touch: 150,
     Channel.none: 0,
 }
+FINANCE_MIN_INR = 2500  # finance_escalation only pays off above this ticket size
+# economic_stop: don't spend a reviewed outreach touch when expected recovery is below this,
+# or the channel send cost is not covered.
+MIN_EXPECTED_RECOVERY_INR = 150
+
+# --- Triage --------------------------------------------------------------------------
+FRESH_CONTACT_WINDOW_HOURS = 18  # failures newer than this are "contacted now"; older wait for business hours
 
 # --- Intelligence layer (SPEC §16) -------------------------------------------------------
 #: Below this, diagnosis.cause becomes `undetermined` -> conservative action only.

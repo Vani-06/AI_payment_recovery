@@ -66,5 +66,6 @@ Opens `http://localhost:3000`. Set `NEXT_PUBLIC_API_BASE` in `frontend/.env.loca
 
 ## Status
 
-Phase 1 complete: Postgres + deterministic seed generator + outcome engine.
-See [docs/PHASES.md](docs/PHASES.md).
+Phase 2 complete: full detect -> diagnose -> plan -> compliance -> execute -> audit loop.
+`python -m app.pipeline --seed 7 --mode auto` runs a batch (38.8% recovered vs 20.5%
+naive baseline on seed 7). See [docs/PHASES.md](docs/PHASES.md).

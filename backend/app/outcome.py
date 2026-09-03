@@ -34,11 +34,16 @@ AFFINITY: dict[Cause, dict[Action, float]] = {
     },
     Cause.checkout_latency: {Action.payment_link_nudge: 0.60, Action.reroute_gateway: 0.40, Action.coupon_offer: 0.40},
     Cause.price_shock_shipping: {Action.coupon_offer: 0.66, Action.payment_link_nudge: 0.34},
-    Cause.mandate_revoked: {Action.update_card_link: 0.60, Action.payment_link_nudge: 0.50, Action.dunning_email: 0.34},
+    Cause.mandate_revoked: {
+        Action.update_card_link: 0.62,
+        Action.finance_escalation: 0.60,
+        Action.payment_link_nudge: 0.50,
+        Action.dunning_email: 0.34,
+    },
     Cause.forgot_to_pay: {
-        Action.payment_link_nudge: 0.62,
-        Action.dunning_email: 0.50,
-        Action.finance_escalation: 0.55,
+        Action.finance_escalation: 0.82,
+        Action.payment_link_nudge: 0.58,
+        Action.dunning_email: 0.46,
     },
     Cause.disputed: {Action.finance_escalation: 0.25},
     Cause.undetermined: {Action.smart_retry: 0.25, Action.reroute_gateway: 0.22},
@@ -46,6 +51,10 @@ AFFINITY: dict[Cause, dict[Action, float]] = {
 
 FLOOR = 0.06
 MAX_P = 0.97
+
+#: Actions whose success is mostly process-driven, not customer-mood-driven (a B2B finance
+#: follow-up behaves more like a silent fix than a consumer nudge).
+LOW_VARIANCE_ACTIONS: frozenset[Action] = frozenset({Action.finance_escalation})
 
 #: Which channel an action goes out on (drives outreach cost + the compliance rules).
 CHANNEL_FOR_ACTION: dict[Action, Channel] = {
@@ -76,6 +85,8 @@ def recovery_probability(cause: Cause, action: Action, responsiveness: float) ->
     base = AFFINITY.get(cause, {}).get(action, FLOOR)
     if action in SILENT_ACTIONS:
         factor = 0.9 + 0.2 * responsiveness  # 0.9 .. 1.1
+    elif action in LOW_VARIANCE_ACTIONS:
+        factor = 0.82 + 0.18 * responsiveness  # 0.82 .. 1.0
     else:
         factor = 0.5 + 0.5 * responsiveness  # 0.5 .. 1.0
     return clamp(base * factor, 0.0, MAX_P)
@@ -102,8 +113,8 @@ def draw_outcome(
 
     p = recovery_probability(true_cause, action, responsiveness)
     if rng.random() < p:
-        if event_type == EventType.invoice_overdue and rng.random() < 0.5:
-            frac = rng.uniform(0.3, 0.7)
+        if event_type == EventType.invoice_overdue and rng.random() < 0.35:
+            frac = rng.uniform(0.4, 0.8)
             return Outcome.partial, round(amount * frac), cost
         return Outcome.recovered, amount, cost
     return Outcome.failed, 0, cost

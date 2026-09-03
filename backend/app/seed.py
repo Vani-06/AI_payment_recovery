@@ -66,9 +66,9 @@ SKEW = {
     "salary_cycle": 35,
     "checkout_latency": 40,
     "price_shock_shipping": 45,
-    "invoice_forgot": 31,
-    "invoice_disputed": 10,
-    "invoice_mandate": 7,
+    "invoice_forgot": 34,
+    "invoice_disputed": 6,
+    "invoice_mandate": 8,
     "sub_mandate": 15,
     "pf_disputed": 2,
     "generic_pf": 12,
@@ -274,11 +274,11 @@ def generate(seed: int) -> tuple[list[Customer], list[RevenueEvent]]:
     b2b = [c for c in customers if c.segment == "b2b"] or customers
     p2p_pool = list(b2b)
     rng.shuffle(p2p_pool)
-    p2p_set = set(c.id for c in p2p_pool[: max(1, len(p2p_pool) // 3)])
-    for cause_key, cause in (
-        ("invoice_forgot", Cause.forgot_to_pay),
-        ("invoice_disputed", Cause.disputed),
-        ("invoice_mandate", Cause.mandate_revoked),
+    p2p_set = set(c.id for c in p2p_pool[: max(1, len(p2p_pool) // 7)])
+    for cause_key, cause, extra in (
+        ("invoice_forgot", Cause.forgot_to_pay, {}),
+        ("invoice_disputed", Cause.disputed, {"dispute_flag": True}),
+        ("invoice_mandate", Cause.mandate_revoked, {"mandate_status": "revoked"}),
     ):
         for _ in range(SKEW[cause_key]):
             cust = rng.choice(b2b)
@@ -287,7 +287,7 @@ def generate(seed: int) -> tuple[list[Customer], list[RevenueEvent]]:
                 cust.promise_to_pay_date = _iso(REFERENCE_NOW + timedelta(days=rng.randint(2, 10)))
             add(
                 EventType.invoice_overdue, cause, cust, _amt_invoice(rng), created,
-                method="netbanking", meta={"days_overdue": (REFERENCE_NOW - created).days},
+                method="netbanking", meta={"days_overdue": (REFERENCE_NOW - created).days, **extra},
             )
 
     # 9. Mandate revoked (subscriptions) ---------------------------------
