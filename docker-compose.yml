@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: sherlock-db
+    environment:
+      POSTGRES_USER: sherlock
+      POSTGRES_PASSWORD: sherlock
+      POSTGRES_DB: sherlock
+    ports:
+      # host 5433 -> container 5432 (host 5432 is often taken by a local Postgres install)
+      - "5433:5432"
+    volumes:
+      - sherlock_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sherlock -d sherlock"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  sherlock_pgdata:

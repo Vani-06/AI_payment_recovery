@@ -4,8 +4,10 @@ uvicorn[standard]>=0.34
 pydantic>=2.10
 pydantic-settings>=2.7
 sqlmodel>=0.0.22
+psycopg[binary]>=3.2
 python-dotenv>=1.0
 httpx>=0.28
+pytest>=8.3
 
 # Phase 4 — pin exact version when wiring the LLM (see docs/SPEC.md §11).
 # The Anthropic SDK is on 1.x; `claude-api` skill has current model ids + params.

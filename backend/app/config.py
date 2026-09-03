@@ -14,6 +14,7 @@ from .enums import Channel
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
+    database_url: str = "postgresql+psycopg://sherlock:sherlock@localhost:5433/sherlock"
     anthropic_api_key: str | None = None
     sherlock_model: str = "claude-sonnet-5"
     frontend_origin: str = "http://localhost:3000"
