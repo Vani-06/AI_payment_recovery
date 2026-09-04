@@ -66,8 +66,8 @@ Opens `http://localhost:3000`. Set `NEXT_PUBLIC_API_BASE` in `frontend/.env.loca
 
 ## Status
 
-Phase 6 complete: core screens live — **Command Center** (count-up KPIs, agent-vs-baseline
-delta, recovered-by-cause bars), **Batch Run** (400-row table, outcome/cause filters, row →
-right-hand trace drawer revealing all 5 stages), **Audit Trail** (filter by event / stage /
-actor / outcome). All three refetch on Run. Leak Graph, Compliance and Chat screens land in
-Phase 7. See [docs/PHASES.md](docs/PHASES.md).
+Phase 7 complete: all seven screens live. Added **Leak Graph** (React Flow — attribute →
+failure → loss, weighted/animated edges, plus a "where the loss traces" bar list),
+**Compliance** (counter tiles + filterable rule-hit table), **Review Queue** (approve /
+reject cards, optimistic + toast), **Chat** (3 grounded intents, suggestion chips).
+Phase 8 is motion polish; Phase 9 is tuning + demo. See [docs/PHASES.md](docs/PHASES.md).
