@@ -1,93 +1,119 @@
-"""FastAPI entrypoint — Phase 0.
+"""FastAPI entrypoint — Phase 3.
 
-Only ``/health`` is real. ``/results`` serves the committed fixture so the frontend can be
-built in parallel. Every other contract endpoint returns 501 until its phase (see
-docs/PHASES.md). Handlers get filled in at Phase 3.
+Every contract endpoint is live and reads from Postgres. On first request (no batch run
+yet) the demo batch is run lazily so the API always has data.
 """
 
 from __future__ import annotations
 
-import json
-from pathlib import Path
-
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 
+from . import chat, queries, review
 from .config import settings
-from .schemas import HealthResponse, ResultsResponse
+from .errors import install as install_errors
+from .pipeline import run_batch
+from .schemas import (
+    AuditResponse,
+    ChatRequest,
+    ChatResponse,
+    ComplianceReport,
+    EventTrace,
+    HealthResponse,
+    LeakGraph,
+    ResetRequest,
+    ResetResponse,
+    ResultsResponse,
+    ReviewDecisionRequest,
+    ReviewDecisionResponse,
+    ReviewQueue,
+    RunInfo,
+    RunRequest,
+    RunSummary,
+)
+from .schemas import BatchAggregates
 
-app = FastAPI(title="Revenue Sherlock", version="0.0.0")
-
+app = FastAPI(title="Revenue Sherlock", version="0.3.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[settings.frontend_origin],
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-_FIXTURE = Path(__file__).resolve().parents[2] / "fixtures" / "sample_results.json"
-
-
-def _not_implemented(name: str) -> JSONResponse:
-    return JSONResponse(
-        status_code=501,
-        content={"error": {"code": "not_implemented", "message": f"{name} lands in a later phase"}},
-    )
+install_errors(app)
 
 
 @app.get("/health", response_model=HealthResponse)
 def health() -> HealthResponse:
-    return HealthResponse()
+    return HealthResponse(phase="3")
+
+
+@app.post("/run", response_model=RunSummary)
+def run(req: RunRequest) -> RunSummary:
+    r = run_batch(req.seed, req.mode.value, req.baseline, persist=True)
+    return RunSummary(run=RunInfo(**r["run"]), aggregates=BatchAggregates.model_validate(r["aggregates"]))
 
 
 @app.get("/results", response_model=ResultsResponse)
-def results() -> ResultsResponse:
-    """P0: return the fixture verbatim. P3: return the persisted last run."""
-    data = json.loads(_FIXTURE.read_text(encoding="utf-8"))
-    return ResultsResponse.model_validate(data)
+def results(
+    limit: int = 400,
+    offset: int = 0,
+    outcome: str | None = None,
+    cause: str | None = None,
+) -> ResultsResponse:
+    queries.ensure_batch()
+    return queries.build_results(limit=limit, offset=offset, outcome=outcome, cause=cause)
 
 
-@app.post("/run")
-def run() -> JSONResponse:  # -> RunSummary  (Phase 3)
-    return _not_implemented("POST /run")
+@app.get("/event/{event_id}", response_model=EventTrace)
+def event(event_id: str) -> EventTrace:
+    queries.ensure_batch()
+    return queries.build_event_trace(event_id)
 
 
-@app.get("/event/{event_id}")
-def event(event_id: str) -> JSONResponse:  # -> EventTrace  (Phase 3)
-    return _not_implemented("GET /event/{id}")
+@app.get("/graph", response_model=LeakGraph)
+def graph() -> LeakGraph:
+    queries.ensure_batch()
+    return queries.build_graph()
 
 
-@app.get("/graph")
-def graph() -> JSONResponse:  # -> LeakGraph  (Phase 3)
-    return _not_implemented("GET /graph")
+@app.get("/audit", response_model=AuditResponse)
+def audit(
+    event: str | None = None,
+    stage: str | None = None,
+    actor: str | None = None,
+    outcome: str | None = None,
+    limit: int = 200,
+    offset: int = 0,
+) -> AuditResponse:
+    queries.ensure_batch()
+    return queries.build_audit(event=event, stage=stage, actor=actor, outcome=outcome, limit=limit, offset=offset)
 
 
-@app.get("/audit")
-def audit() -> JSONResponse:  # -> AuditResponse  (Phase 3)
-    return _not_implemented("GET /audit")
+@app.get("/compliance", response_model=ComplianceReport)
+def compliance() -> ComplianceReport:
+    queries.ensure_batch()
+    return queries.build_compliance()
 
 
-@app.get("/compliance")
-def compliance() -> JSONResponse:  # -> ComplianceReport  (Phase 3)
-    return _not_implemented("GET /compliance")
+@app.get("/review", response_model=ReviewQueue)
+def review_list() -> ReviewQueue:
+    queries.ensure_batch()
+    return queries.review_queue()
 
 
-@app.get("/review")
-def review_queue() -> JSONResponse:  # -> ReviewQueue  (Phase 3)
-    return _not_implemented("GET /review")
+@app.post("/review/{event_id}", response_model=ReviewDecisionResponse)
+def review_decide(event_id: str, req: ReviewDecisionRequest) -> ReviewDecisionResponse:
+    return review.apply_decision(event_id, req.decision.value)
 
 
-@app.post("/review/{event_id}")
-def review_decide(event_id: str) -> JSONResponse:  # -> ReviewDecisionResponse  (Phase 3)
-    return _not_implemented("POST /review/{event_id}")
+@app.post("/chat", response_model=ChatResponse)
+def chat_endpoint(req: ChatRequest) -> ChatResponse:
+    queries.ensure_batch()
+    return chat.answer(req.question)
 
 
-@app.post("/chat")
-def chat() -> JSONResponse:  # -> ChatResponse  (Phase 4)
-    return _not_implemented("POST /chat")
-
-
-@app.post("/admin/reset")
-def admin_reset() -> JSONResponse:  # -> ResetResponse  (Phase 3)
-    return _not_implemented("POST /admin/reset")
+@app.post("/admin/reset", response_model=ResetResponse)
+def admin_reset(req: ResetRequest) -> ResetResponse:
+    r = run_batch(req.seed, "auto", persist=True)
+    return ResetResponse(status="reseeded", event_count=r["run"]["event_count"])

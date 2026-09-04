@@ -66,6 +66,7 @@ Opens `http://localhost:3000`. Set `NEXT_PUBLIC_API_BASE` in `frontend/.env.loca
 
 ## Status
 
-Phase 2 complete: full detect -> diagnose -> plan -> compliance -> execute -> audit loop.
-`python -m app.pipeline --seed 7 --mode auto` runs a batch (38.8% recovered vs 20.5%
-naive baseline on seed 7). See [docs/PHASES.md](docs/PHASES.md).
+Phase 3 complete: every contract endpoint is live over Postgres
+(`/run`, `/results`, `/event/{id}`, `/graph`, `/audit`, `/compliance`, `/review`,
+`/chat`, `/admin/reset`). First request lazily runs the demo batch.
+`/chat` is templated until Phase 4. See [docs/PHASES.md](docs/PHASES.md).
