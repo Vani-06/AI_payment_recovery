@@ -9,6 +9,5 @@ python-dotenv>=1.0
 httpx>=0.28
 pytest>=8.3
 
-# Phase 4 — pin exact version when wiring the LLM (see docs/SPEC.md §11).
-# The Anthropic SDK is on 1.x; `claude-api` skill has current model ids + params.
-anthropic
+# Phase 4 — LLM layer (behind app/llm.py). Fallback-first: no key => templated prose.
+anthropic>=1.3,<2

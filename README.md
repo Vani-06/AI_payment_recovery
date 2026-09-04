@@ -66,7 +66,8 @@ Opens `http://localhost:3000`. Set `NEXT_PUBLIC_API_BASE` in `frontend/.env.loca
 
 ## Status
 
-Phase 3 complete: every contract endpoint is live over Postgres
-(`/run`, `/results`, `/event/{id}`, `/graph`, `/audit`, `/compliance`, `/review`,
-`/chat`, `/admin/reset`). First request lazily runs the demo batch.
-`/chat` is templated until Phase 4. See [docs/PHASES.md](docs/PHASES.md).
+Phase 4 complete: LLM layer behind `app/llm.py`. `/event/{id}` returns a written
+diagnosis narrative + plan rationale; `/chat` answers 3 intents. **Fallback-first** —
+no `ANTHROPIC_API_KEY` means templated prose from the same evidence, and every test
+passes without a key. `python -m app.pipeline --seed 7 --narrate` pre-fills all
+narratives (disk-cached). See [docs/PHASES.md](docs/PHASES.md).

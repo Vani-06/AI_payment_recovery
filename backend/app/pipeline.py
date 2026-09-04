@@ -298,10 +298,16 @@ def _cli() -> None:
     ap.add_argument("--mode", choices=["auto", "review"], default="auto")
     ap.add_argument("--baseline", action="store_true")
     ap.add_argument("--no-persist", action="store_true", help="skip DB writes")
+    ap.add_argument("--narrate", action="store_true", help="pre-fill LLM narratives after the run")
     args = ap.parse_args()
 
     result = run_batch(args.seed, args.mode, args.baseline, persist=not args.no_persist)
     print(_format(result, args.seed))
+
+    if args.narrate and not args.no_persist:
+        from .narrate import warm_narratives
+
+        print(f"  warmed narratives for {warm_narratives()} events\n")
 
     # quick attribution accuracy vs the hidden ground truth
     customers, events = generate(args.seed)

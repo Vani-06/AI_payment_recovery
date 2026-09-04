@@ -12,14 +12,32 @@ from sqlmodel import Session, select
 
 from .db import ENGINE
 from .errors import ApiError
+from .llm import LLMError, llm, llm_available
 from .models import BatchRun, Customer, Diagnosis, Execution, RevenueEvent
 from .schemas import ChatResponse
 
 _CUS_RE = re.compile(r"(cus_\d{1,4}|customer\s*#?\s*\d{1,4})", re.I)
 
+_CHAT_SYS = (
+    "You are a revenue-operations analyst answering a colleague. Rewrite the given facts "
+    "as a direct 2-4 sentence answer to the question. Use ONLY the facts provided — never "
+    "invent or round numbers differently. Plain text, no markdown."
+)
+
 
 def _pct(x: float) -> str:
     return f"{x * 100:.0f}%"
+
+
+def _resp(intent: str, facts: str, grounded: list[str], question: str) -> ChatResponse:
+    """Templated `facts` are the ground truth; the LLM only rephrases them if available."""
+    answer = facts
+    if llm_available():
+        try:
+            answer = llm(_CHAT_SYS, f"Question: {question}\n\nFacts:\n{facts}", max_tokens=220)
+        except LLMError:
+            pass
+    return ChatResponse(intent=intent, answer=answer, grounded_on=grounded)
 
 
 def answer(question: str) -> ChatResponse:
@@ -33,7 +51,7 @@ def answer(question: str) -> ChatResponse:
 
         m = _CUS_RE.search(q)
         if m and ("customer" in q or "cus_" in q):
-            return _customer_detail(s, m.group(0), agg)
+            return _customer_detail(s, m.group(0), question)
 
     if any(w in q for w in ("why", "down", "drop", "leak", "losing", "lose", "falling")):
         loss_edges = sorted(
@@ -51,7 +69,7 @@ def answer(question: str) -> ChatResponse:
             f"It held off on {agg['compliance']['escalated']} disputed/on-hold accounts and "
             f"deferred {agg['compliance']['deferred']} for quiet hours or promise-to-pay."
         )
-        return ChatResponse(intent="why_down", answer=body, grounded_on=["batch_run.leak_graph", "batch_run.aggregates"])
+        return _resp("why_down", body, ["batch_run.leak_graph", "batch_run.aggregates"], question)
 
     if "cause" in q or "top" in q:
         top = agg["recovered_by_cause"][:4]
@@ -60,11 +78,7 @@ def answer(question: str) -> ChatResponse:
             f"({_pct(r['recovered'] / r['at_risk']) if r['at_risk'] else '0%'})"
             for r in top
         )
-        return ChatResponse(
-            intent="top_causes",
-            answer=f"Top loss causes by revenue at risk: {lines}.",
-            grounded_on=["batch_run.aggregates.recovered_by_cause"],
-        )
+        return _resp("top_causes", f"Top loss causes by revenue at risk: {lines}.", ["batch_run.aggregates.recovered_by_cause"], question)
 
     return ChatResponse(
         intent="unknown",
@@ -73,7 +87,7 @@ def answer(question: str) -> ChatResponse:
     )
 
 
-def _customer_detail(s: Session, token: str, agg: dict) -> ChatResponse:
+def _customer_detail(s: Session, token: str, question: str) -> ChatResponse:
     digits = re.sub(r"\D", "", token)
     cid = f"cus_{int(digits):04d}"
     cust = s.get(Customer, cid)
@@ -101,9 +115,8 @@ def _customer_detail(s: Session, token: str, agg: dict) -> ChatResponse:
         )
     flags = [f for f, v in (("DND", cust.dnd), ("opt-out", cust.opt_out), ("on hold", cust.on_hold)) if v]
     flag_txt = f" Flags: {', '.join(flags)}." if flags else ""
-    return ChatResponse(
-        intent="customer_detail",
-        answer=f"{cust.label} ({cust.segment}, {cust.region}){flag_txt} "
-        f"{len(events)} at-risk event(s), Rs {recovered:,} recovered. " + " | ".join(lines),
-        grounded_on=[f"revenue_event[{cid}]", "execution", "diagnosis"],
+    facts = (
+        f"{cust.label} ({cust.segment}, {cust.region}){flag_txt} "
+        f"{len(events)} at-risk event(s), Rs {recovered:,} recovered. " + " | ".join(lines)
     )
+    return _resp("customer_detail", facts, [f"revenue_event[{cid}]", "execution", "diagnosis"], question)

@@ -144,7 +144,7 @@ def build_results(
 
 
 def build_event_trace(event_id: str) -> EventTrace:
-    with Session(ENGINE) as s:
+    with Session(ENGINE, expire_on_commit=False) as s:
         e = s.get(RevenueEvent, event_id)
         if e is None:
             raise ApiError("not_found", 404, f"unknown event {event_id}")
@@ -156,8 +156,23 @@ def build_event_trace(event_id: str) -> EventTrace:
             select(AuditEntry).where(AuditEntry.event_id == event_id).order_by(AuditEntry.id)
         ).all()
 
-    if not (cust and d and p and x):
-        raise ApiError("not_found", 404, f"event {event_id} has no pipeline output — run a batch first")
+        if not (cust and d and p and x):
+            raise ApiError("not_found", 404, f"event {event_id} has no pipeline output — run a batch first")
+
+        # Phase 4: fill LLM prose on first read, then persist so it's stable + cached.
+        from . import narrate
+
+        if not d.narrative:
+            d.narrative = narrate.diagnosis_narrative(EventPublic.of(e).model_dump(), d.cause, d.confidence, d.evidence)
+            s.add(d)
+        if not p.rationale:
+            p.rationale = narrate.plan_rationale(
+                d.cause, p.action, p.channel, CustomerMasked.of(cust).model_dump(mode="json"), e.amount
+            )
+            s.add(p)
+        s.commit()
+        s.refresh(d)
+        s.refresh(p)
 
     tri = next((a.detail for a in audit if a.stage == "triage"), {})
     return EventTrace(
