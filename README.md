@@ -20,13 +20,22 @@ fixtures/           sample_results.json - example /results payload for FE dev
 docker-compose.yml  local Postgres 16
 ```
 
+## Quick start (Windows)
+
+```powershell
+.\scripts\dev.ps1
+```
+
+Starts Postgres, seeds + runs the demo batch, launches backend + frontend, opens
+`http://localhost:3000`. Demo runbook: [docs/DEMO.md](docs/DEMO.md).
+
 ## Run - database
 
 ```bash
 docker compose up -d
 ```
 
-Postgres 16 on `localhost:5432` (db / user / pass all `sherlock`). Override with
+Postgres 16 on `localhost:5433` (db / user / pass all `sherlock`). Override with
 `DATABASE_URL` to use a hosted DB.
 
 ## Run - backend
@@ -66,8 +75,7 @@ Opens `http://localhost:3000`. Set `NEXT_PUBLIC_API_BASE` in `frontend/.env.loca
 
 ## Status
 
-Phase 8 complete: motion & polish. Added the headline **Pipeline flow** on Command Center
-(sample events travel through the 5 stage columns and drop into an outcome-coloured tray;
-`replay` / `stream`), pointer parallax on the hero blobs, loading skeletons on every data
-screen, and a full `prefers-reduced-motion` path. Phase 9 is tuning + demo prep.
-See [docs/PHASES.md](docs/PHASES.md).
+**Phases 0-9 complete.** Seed 7 locked as the demo batch (38.8% recovered vs 20.5% naive
+baseline, +18.3 pts; deferred 14 / suppressed 18 / stopped 16 / escalated 22; 93%
+diagnosis accuracy). `run_batch` is deterministic and `/run` lands in ~0.8s. Demo runbook:
+[docs/DEMO.md](docs/DEMO.md). Remaining: record the fallback screen-capture (a human step).

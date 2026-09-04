@@ -143,6 +143,11 @@ def _aggregate(events, diagnoses, executions, engine, audit, base_rate: float) -
     }
 
 
+#: The naive-baseline rate is deterministic per seed — cache it so a normal /run doesn't
+#: pay for a second full pipeline pass.
+_BASELINE_RATE_CACHE: dict[int, float] = {}
+
+
 def run_batch(seed: int = 7, mode: str = "auto", baseline: bool = False, persist: bool = True) -> dict:
     customers, events = generate(seed)
     by_id = {c.id: c for c in customers}
@@ -153,9 +158,12 @@ def run_batch(seed: int = 7, mode: str = "auto", baseline: bool = False, persist
     # withhold action on disputed / promise-to-pay accounts. Only the routing differs.
     if baseline:
         baseline_rate = None  # a baseline run reports itself
+    elif seed in _BASELINE_RATE_CACHE:
+        baseline_rate = _BASELINE_RATE_CACHE[seed]
     else:
         b = run_batch(seed, mode="auto", baseline=True, persist=False)
         baseline_rate = b["aggregates"]["recovery_rate"]
+        _BASELINE_RATE_CACHE[seed] = baseline_rate
 
     stats = compute_batch_stats(events, customers)
     engine = ComplianceEngine(customers, now=REFERENCE_NOW)
