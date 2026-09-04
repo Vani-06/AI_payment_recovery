@@ -30,6 +30,23 @@ export function cardEnter(reduced: boolean) {
       };
 }
 
+/** Subtle pointer parallax (px offset from viewport centre). Zero under reduced motion. */
+export function useParallax(strength = 4): { x: number; y: number } {
+  const reduced = useReducedMotionSafe();
+  const [xy, setXY] = useState({ x: 0, y: 0 });
+  useEffect(() => {
+    if (reduced) return;
+    const on = (e: PointerEvent) => {
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight / 2;
+      setXY({ x: ((e.clientX - cx) / cx) * strength, y: ((e.clientY - cy) / cy) * strength });
+    };
+    window.addEventListener("pointermove", on);
+    return () => window.removeEventListener("pointermove", on);
+  }, [reduced, strength]);
+  return xy;
+}
+
 export function Stagger({
   children,
   gap = 0.05,

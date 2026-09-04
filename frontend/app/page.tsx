@@ -7,10 +7,11 @@ import { api, API_BASE, ApiClientError } from "@/lib/api";
 import { useRun } from "@/lib/run-context";
 import { humanize, inrLakh, pct } from "@/lib/format";
 import type { ResultsResponse } from "@/lib/types";
-import { Card, Blob, PageHeader } from "@/components/ui";
+import { Card, Blob, PageHeader, Skeleton } from "@/components/ui";
 import { Num } from "@/components/Num";
 import { CauseBars } from "@/components/CauseBars";
-import { Stagger, StaggerItem } from "@/components/motion";
+import { PipelineFlow } from "@/components/PipelineFlow";
+import { Stagger, StaggerItem, useParallax } from "@/components/motion";
 
 export default function CommandCenter() {
   const { version, error: runError } = useRun();
@@ -37,11 +38,12 @@ export default function CommandCenter() {
 
   const a = data?.aggregates;
   const delta = a ? a.recovery_rate - a.baseline_recovery_rate : 0;
+  const par = useParallax(5);
 
   return (
     <div className="relative">
-      <Blob className="left-40 top-4 h-64 w-64 bg-sage" />
-      <Blob className="right-4 top-44 h-72 w-72 bg-blue" />
+      <Blob className="left-40 top-4 h-64 w-64 bg-sage" style={{ transform: `translate3d(${par.x}px, ${par.y}px, 0)` }} />
+      <Blob className="right-4 top-44 h-72 w-72 bg-blue" style={{ transform: `translate3d(${-par.x}px, ${-par.y}px, 0)` }} />
 
       <PageHeader
         title="Command Center"
@@ -79,6 +81,10 @@ export default function CommandCenter() {
             ))}
           </Stagger>
 
+          <Card className="mt-4">
+            <PipelineFlow />
+          </Card>
+
           <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_2fr]">
             <Card className="flex flex-col justify-center">
               <p className="text-xs text-ink-soft">Agent vs naive baseline</p>
@@ -109,7 +115,13 @@ export default function CommandCenter() {
         </>
       )}
 
-      {!a && !err && <p className="mt-6 text-sm text-ink-soft">Loading the latest batch…</p>}
+      {!a && !err && (
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className="h-[92px]" />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

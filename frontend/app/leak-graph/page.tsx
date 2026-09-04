@@ -5,7 +5,7 @@ import { api, ApiClientError } from "@/lib/api";
 import { useRun } from "@/lib/run-context";
 import { humanize, inrLakh } from "@/lib/format";
 import type { LeakGraph as LeakGraphData } from "@/lib/types";
-import { PageHeader, Card } from "@/components/ui";
+import { PageHeader, Card, Skeleton } from "@/components/ui";
 import { LeakGraph } from "@/components/LeakGraph";
 
 export default function LeakGraphPage() {
@@ -70,7 +70,7 @@ export default function LeakGraphPage() {
         </>
       )}
 
-      {!graph && !err && <p className="mt-6 text-sm text-ink-soft">Loading the graph…</p>}
+      {!graph && !err && <Skeleton className="h-[560px]" />}
     </div>
   );
 }

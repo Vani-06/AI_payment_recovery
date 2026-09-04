@@ -5,7 +5,7 @@ import { api, ApiClientError } from "@/lib/api";
 import { useRun } from "@/lib/run-context";
 import { humanize } from "@/lib/format";
 import type { ComplianceReport } from "@/lib/types";
-import { PageHeader, Card } from "@/components/ui";
+import { PageHeader, Card, Skeleton } from "@/components/ui";
 import { Chip } from "@/components/Chip";
 import { Num } from "@/components/Num";
 import { Stagger, StaggerItem } from "@/components/motion";
@@ -52,6 +52,7 @@ export default function CompliancePage() {
         subtitle="Every action passes the stopping rules before execution. The system will not spam."
       />
       {err && <p className="text-sm text-outcome-failed">{err}</p>}
+      {!c && !err && <Skeleton className="h-[400px]" />}
 
       {c && (
         <>

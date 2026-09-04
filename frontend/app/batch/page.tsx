@@ -5,7 +5,7 @@ import { api, ApiClientError } from "@/lib/api";
 import { useRun } from "@/lib/run-context";
 import { humanize, inr, pct } from "@/lib/format";
 import type { ResultsResponse } from "@/lib/types";
-import { PageHeader } from "@/components/ui";
+import { PageHeader, Skeleton } from "@/components/ui";
 import { Chip } from "@/components/Chip";
 import { TraceDrawer } from "@/components/TraceDrawer";
 
@@ -54,6 +54,7 @@ export default function BatchRunPage() {
         subtitle={data ? `${rows.length} of ${data.rows.length} events` : "Loading…"}
       />
       {err && <p className="text-sm text-outcome-failed">{err}</p>}
+      {!data && !err && <Skeleton className="h-[420px]" />}
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <select className={sel} value={fOutcome} onChange={(e) => setFOutcome(e.target.value)}>

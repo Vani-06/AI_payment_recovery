@@ -66,8 +66,8 @@ Opens `http://localhost:3000`. Set `NEXT_PUBLIC_API_BASE` in `frontend/.env.loca
 
 ## Status
 
-Phase 7 complete: all seven screens live. Added **Leak Graph** (React Flow — attribute →
-failure → loss, weighted/animated edges, plus a "where the loss traces" bar list),
-**Compliance** (counter tiles + filterable rule-hit table), **Review Queue** (approve /
-reject cards, optimistic + toast), **Chat** (3 grounded intents, suggestion chips).
-Phase 8 is motion polish; Phase 9 is tuning + demo. See [docs/PHASES.md](docs/PHASES.md).
+Phase 8 complete: motion & polish. Added the headline **Pipeline flow** on Command Center
+(sample events travel through the 5 stage columns and drop into an outcome-coloured tray;
+`replay` / `stream`), pointer parallax on the hero blobs, loading skeletons on every data
+screen, and a full `prefers-reduced-motion` path. Phase 9 is tuning + demo prep.
+See [docs/PHASES.md](docs/PHASES.md).

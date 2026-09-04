@@ -4,8 +4,18 @@ export function Card({ className = "", children }: { className?: string; childre
   return <div className={`rounded-card bg-surface p-6 shadow-float ${className}`}>{children}</div>;
 }
 
-export function Blob({ className = "" }: { className?: string }) {
-  return <div aria-hidden className={`pointer-events-none absolute -z-10 rounded-full blur-3xl opacity-40 ${className}`} />;
+export function Blob({ className = "", style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <div
+      aria-hidden
+      style={style}
+      className={`pointer-events-none absolute -z-10 rounded-full blur-3xl opacity-40 ${className}`}
+    />
+  );
+}
+
+export function Skeleton({ className = "" }: { className?: string }) {
+  return <div className={`animate-pulse rounded-card bg-surface-sunk/60 ${className}`} />;
 }
 
 export function Stat({ label, value, sub }: { label: string; value: ReactNode; sub?: ReactNode }) {
