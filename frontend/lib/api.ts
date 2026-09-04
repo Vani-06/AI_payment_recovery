@@ -81,6 +81,12 @@ export const api = {
 
   chat: (question: string) =>
     req<ChatResponse>("/chat", { method: "POST", body: JSON.stringify({ question }) }),
+
+  adminReset: (seed: number) =>
+    req<{ status: string; event_count: number }>("/admin/reset", {
+      method: "POST",
+      body: JSON.stringify({ seed }),
+    }),
 };
 
 export { ApiClientError, BASE as API_BASE };

@@ -66,8 +66,11 @@ Opens `http://localhost:3000`. Set `NEXT_PUBLIC_API_BASE` in `frontend/.env.loca
 
 ## Status
 
-Phase 4 complete: LLM layer behind `app/llm.py`. `/event/{id}` returns a written
-diagnosis narrative + plan rationale; `/chat` answers 3 intents. **Fallback-first** —
-no `ANTHROPIC_API_KEY` means templated prose from the same evidence, and every test
-passes without a key. `python -m app.pipeline --seed 7 --narrate` pre-fills all
-narratives (disk-cached). See [docs/PHASES.md](docs/PHASES.md).
+Phase 5 complete: Next.js app shell — left icon rail (7 routes), floating action bar
+(seed · agent/baseline · Auto/Review · run), typed API client, Framer Motion baseline
+(shared spring, `prefers-reduced-motion` fallback, staggered lists). Command Center shows
+live headline metrics; the other six screens render their data in Phases 6-7.
+See [docs/PHASES.md](docs/PHASES.md).
+
+Backend (Phases 0-4) is feature-complete: `python -m app.pipeline --seed 7 --narrate`
+for the CLI, `uvicorn app.main:app` for the API.
