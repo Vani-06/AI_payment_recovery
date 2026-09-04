@@ -87,8 +87,14 @@ def _diag_template(cause: str, confidence: float, evidence: dict) -> str:
         bits.append(f"gateway signalled '{ev.get('error_code') or ev.get('decline_code')}'")
     if ev.get("day") or ev.get("day_of_month"):
         bits.append("failure fell in the first days of the month")
+    if ev.get("mandate_status") == "revoked":
+        bits.append("the payment mandate has been revoked by the customer")
+    if ev.get("dispute"):
+        bits.append("the charge is flagged as disputed")
+    if ev.get("signal") == "card_subscription":
+        bits.append("a card-on-file subscription renewal declined")
     if ev.get("days_overdue") is not None:
-        bits.append(f"invoice {ev['days_overdue']} days overdue")
+        bits.append(f"invoice {ev['days_overdue']} days overdue with no dispute or mandate flag")
     reason = "; ".join(bits) if bits else "the available signals point this way"
     gated = " (below the confidence threshold, so treated conservatively)" if cause == "undetermined" else ""
     return f"Diagnosed as {_humanize(cause)} (confidence {confidence:.2f}){gated}. Evidence: {reason}."
